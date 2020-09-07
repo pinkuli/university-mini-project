@@ -1,0 +1,137 @@
+﻿<!doctype html>
+<html>
+<head>
+	<title>AJAX IMDB</title>
+
+	<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.2.1/jquery.min.js"></script>
+	
+
+	<link rel="stylesheet" type="text/css" href="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/css/bootstrap.min.css">
+	<script src="https://maxcdn.bootstrapcdn.com/bootstrap/3.3.7/js/bootstrap.min.js"></script>
+
+
+</head>
+
+<body>
+
+	<button id="load-movies" class="btn btn-success">Učitaj filmove</button><br /><br /><br />
+	<button id="refresh" class="btn btn-success">Osvježi</button><br /><br /><br />
+	<div id="movies"></div>
+	<div class="">
+		<form>
+			Title: <input type="text">
+			Year: <input type="number">
+			Rating: <input type="number">
+			Poster: <input type="url">
+			<button id="n" class="btn btn-warning">Add new movie</button>
+		</form>
+	</div>
+
+	<script>
+
+		let movies = [];
+
+		var div = document.getElementById('movies');
+		document.getElementById('load-movies').addEventListener('click', getData);
+
+		document.getElementById('refresh').addEventListener('click', () => render(5,-1) );
+
+		function getData(e) {
+
+			fetch('https://bridge.hr/ipw/imdb.json')
+				.then(data => data.json())
+				.then(data => {
+
+					movies = data;
+					render();
+
+				});
+
+
+		}
+
+		function render(limit = Math.Infinity, year = -1) {
+
+
+			let items = year == -1 ? movies : movies.filter(m => m.year == year);
+			items = items.slice(0, limit);
+
+			var html = ``;
+
+			let years = Array.from(new Set(movies.map(e => e.year).sort((a, b) => a - b).reverse()));
+
+			let options = "<option value='-1'>Sve</option>" + years.map(e => "<option>" + e + "</option>\n").join("");
+
+			html += `
+			
+			<select id="select-year">
+				${options}
+			</select>
+
+			<table class='table table-striped'>
+				<tr>
+					<th>#</th>
+					<th>Title</th>
+					<th>Year</th>
+					<th>Rating</th>
+					<th>Poster</th>
+					<th></th>
+				</tr>
+			`;
+
+			html += items.map(item => `
+				<tr>
+					<td class="mid">${item.index}</td>
+					<td>${item.name}</td>
+					<td>${item.year}</td>
+					<td>${item.rating}</td>
+					<td><img height=80 width=40 src="${item.poster}"></td>
+					<td><button class="btn btn-danger delete-movie" >Delete</button></td>
+				</tr>
+			`).join('');
+
+			html += `
+				</table>
+			`;
+
+			div.innerHTML = html;
+
+			$(".delete-movie").click(function () {
+
+				
+				let id = $(this).parent().siblings(".mid").text();
+
+				movies = movies.filter(i => i.index != id);
+
+				render();
+
+			});
+		}
+
+		document.getElementById('n').addEventListener('click', (e) => {
+
+			e.preventDefault();
+			console.log(Math.max(movies));
+
+			let movie = {
+				index: movies.map(e => e.index).reduce(function (a, b) { return Math.max(a, b) }) + 1,
+				name: document.forms[0].elements[0].value,
+				year: document.forms[0].elements[1].value,
+				rating: document.forms[0].elements[2].value,
+				poster: document.forms[0].elements[3].value
+			};
+
+
+			
+			movies.push(movie);
+			render();
+
+		});
+
+
+		
+			
+	</script>
+
+</body>
+</html>
